@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { doc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from '../context/AuthContext'
 import sendNotification from '../utils/sendNotification'
+
+const TAG_COLORS = {
+  Question: '#3b82f6',
+  Project: '#10b981',
+  Job: '#f59e0b',
+  Tutorial: '#8b5cf6',
+  Discussion: '#6366f1',
+  Hiring: '#ef4444',
+}
 
 const PostCard = ({ post }) => {
   const { currentUser } = useAuth()
@@ -14,168 +23,199 @@ const PostCard = ({ post }) => {
   const likesCount = post.likes ? post.likes.length : 0
   const commentsCount = post.comments ? post.comments.length : 0
 
- const handleLike = async () => {
-  if (!currentUser) return
-  const postRef = doc(db, 'posts', post.id)
+  const handleLike = async () => {
+    if (!currentUser) return
+    const postRef = doc(db, 'posts', post.id)
+    if (isLiked) {
+      await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) })
+    } else {
+      await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) })
+      if (post.uid !== currentUser.uid) {
+        await sendNotification({
+          toUid: post.uid,
+          fromName: currentUser.displayName,
+          fromPhoto: currentUser.photoURL || '',
+          type: 'like',
+          postId: post.id,
+        })
+      }
+    }
+  }
 
-  if (isLiked) {
-    await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) })
-  } else {
-    await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) })
-
-    // Only notify if liking someone else's post
+  const handleComment = async (e) => {
+    e.preventDefault()
+    if (!comment.trim() || !currentUser) return
+    const postRef = doc(db, 'posts', post.id)
+    await updateDoc(postRef, {
+      comments: arrayUnion({
+        uid: currentUser.uid,
+        name: currentUser.displayName,
+        photoURL: currentUser.photoURL || '',
+        text: comment.trim(),
+        createdAt: new Date().toISOString(),
+      })
+    })
     if (post.uid !== currentUser.uid) {
       await sendNotification({
         toUid: post.uid,
         fromName: currentUser.displayName,
         fromPhoto: currentUser.photoURL || '',
-        type: 'like',
+        type: 'comment',
         postId: post.id,
       })
     }
-  }
-}
-const handleComment = async (e) => {
-  e.preventDefault()
-  if (!comment.trim() || !currentUser) return
-
-  const postRef = doc(db, 'posts', post.id)
-  await updateDoc(postRef, {
-    comments: arrayUnion({
-      uid: currentUser.uid,
-      name: currentUser.displayName,
-      photoURL: currentUser.photoURL || '',
-      text: comment.trim(),
-      createdAt: new Date().toISOString(),
-    })
-  })
-
-  // Only notify if commenting on someone else's post
-  if (post.uid !== currentUser.uid) {
-    await sendNotification({
-      toUid: post.uid,
-      fromName: currentUser.displayName,
-      fromPhoto: currentUser.photoURL || '',
-      type: 'comment',
-      postId: post.id,
-    })
+    setComment('')
   }
 
-  setComment('')
-}
-  const toggleComments = () => setShowComments(prev => !prev)
+  const tagColor = post.tag ? TAG_COLORS[post.tag] || '#6366f1' : null
 
   return (
-   <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5">
-
+    <div style={{
+      backgroundColor: '#111111',
+      border: '1px solid #1f1f1f',
+      borderRadius: '16px',
+      padding: '20px',
+      transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = '#2a2a2a'
+        e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.3)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = '#1f1f1f'
+        e.currentTarget.style.boxShadow = 'none'
+      }}
+    >
       {/* Author */}
-      <div className="flex items-center gap-3 mb-3">
-        <Link to={`/profile/${post.uid}`}>
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+        <Link to={`/profile/${post.uid}`} style={{ textDecoration: 'none' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', flexShrink: 0,
+          }}>
             {post.photoURL ? (
-              <img src={post.photoURL} alt={post.name} className="w-full h-full object-cover" />
+              <img src={post.photoURL} alt={post.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <span className="text-sm font-bold text-indigo-600">
+              <span style={{ color: 'white', fontWeight: '700', fontSize: '14px' }}>
                 {post.name ? post.name[0].toUpperCase() : '?'}
               </span>
             )}
           </div>
         </Link>
         <div>
-          <Link to={`/profile/${post.uid}`} className="text-sm font-semibold text-gray-900 hover:underline">
-            {post.name}
+          <Link to={`/profile/${post.uid}`} style={{ textDecoration: 'none' }}>
+            <p style={{ fontSize: '14px', fontWeight: '600', color: '#fafafa' }}>{post.name}</p>
           </Link>
-          <p className="text-xs text-gray-400">
-            {post.createdAt ? new Date(post.createdAt.toDate()).toLocaleDateString() : ''}
+          <p style={{ fontSize: '12px', color: '#52525b' }}>
+            {post.createdAt ? new Date(post.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
           </p>
         </div>
+        {tagColor ? (
+          <div style={{ marginLeft: 'auto' }}>
+            <span style={{
+              fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '20px',
+              backgroundColor: tagColor + '20', color: tagColor, border: `1px solid ${tagColor}40`,
+            }}>
+              {post.tag}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Content */}
-      <p className="text-gray-800 text-sm leading-relaxed mb-4">{post.content}</p>
-
-      {/* Tag */}
-      {post.tag ? (
-        <span className="inline-block bg-indigo-50 text-indigo-600 text-xs font-medium px-3 py-1 rounded-full mb-4">
-          {post.tag}
-        </span>
-      ) : null}
+      <p style={{ fontSize: '15px', color: '#d4d4d8', lineHeight: '1.6', marginBottom: '16px' }}>
+        {post.content}
+      </p>
 
       {/* Actions */}
-      <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-
-        {/* Like */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingTop: '14px', borderTop: '1px solid #1f1f1f' }}>
         <button
           onClick={handleLike}
-          className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-            isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
-          }`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '13px', fontWeight: '500',
+            color: isLiked ? '#f43f5e' : '#52525b',
+            padding: '4px 8px', borderRadius: '6px',
+            backgroundColor: isLiked ? '#f43f5e15' : 'transparent',
+          }}
         >
           <span>{isLiked ? '❤️' : '🤍'}</span>
           <span>{likesCount}</span>
         </button>
 
-        {/* Comment toggle */}
         <button
-          onClick={toggleComments}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-indigo-500 transition-colors"
+          onClick={() => setShowComments(prev => !prev)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '13px', fontWeight: '500', color: '#52525b',
+            padding: '4px 8px', borderRadius: '6px',
+          }}
         >
           <span>💬</span>
           <span>{commentsCount}</span>
         </button>
-
       </div>
 
-      {/* Comments section */}
+      {/* Comments */}
       {showComments ? (
-        <div className="mt-4 space-y-3">
+        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {post.comments && post.comments.length > 0 ? (
+            post.comments.map((c, index) => (
+              <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                }}>
+                  {c.photoURL ? (
+                    <img src={c.photoURL} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ color: 'white', fontSize: '11px', fontWeight: '700' }}>
+                      {c.name ? c.name[0].toUpperCase() : '?'}
+                    </span>
+                  )}
+                </div>
+                <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '8px 12px', flex: 1, border: '1px solid #2a2a2a' }}>
+                  <p style={{ fontSize: '12px', fontWeight: '600', color: '#a1a1aa', marginBottom: '2px' }}>{c.name}</p>
+                  <p style={{ fontSize: '13px', color: '#d4d4d8' }}>{c.text}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p style={{ fontSize: '13px', color: '#52525b' }}>No comments yet.</p>
+          )}
 
-          {/* Existing comments */}
-        {post.comments && post.comments.length > 0 ? (
-  post.comments.map((c, index) => (
-    <div key={index} className="flex gap-2">
-      <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {c.photoURL ? (
-          <img src={c.photoURL} alt={c.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-xs font-bold text-indigo-600">
-            {c.name ? c.name[0].toUpperCase() : '?'}
-          </span>
-        )}
-      </div>
-      <div className="bg-gray-50 rounded-xl px-3 py-2 flex-1">
-        <p className="text-xs font-semibold text-gray-700">{c.name}</p>
-        <p className="text-xs text-gray-600 mt-0.5">{c.text}</p>
-      </div>
-    </div>
-  ))
-) : (
-  <p className="text-xs text-gray-400">No comments yet.</p>
-)}
-          
-
-          {/* Add comment */}
           {currentUser ? (
-            <form onSubmit={handleComment} className="flex gap-2 mt-2">
+            <form onSubmit={handleComment} style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               <input
                 type="text"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 placeholder="Write a comment..."
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                style={{
+                  flex: 1, backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a',
+                  borderRadius: '8px', padding: '8px 12px', fontSize: '13px',
+                  color: '#fafafa', outline: 'none',
+                }}
               />
               <button
                 type="submit"
-                className="bg-indigo-600 text-white text-xs font-medium px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                style={{
+                  padding: '8px 16px', borderRadius: '8px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                }}
               >
                 Post
               </button>
             </form>
           ) : null}
-
         </div>
       ) : null}
-
     </div>
   )
 }

@@ -7,6 +7,15 @@ import CreatePost from '../components/CreatePost'
 
 const FILTERS = ['All', 'Question', 'Project', 'Job', 'Tutorial', 'Discussion', 'Hiring']
 
+const TAG_COLORS = {
+  Question: '#3b82f6',
+  Project: '#10b981',
+  Job: '#f59e0b',
+  Tutorial: '#8b5cf6',
+  Discussion: '#6366f1',
+  Hiring: '#ef4444',
+}
+
 const Home = () => {
   const { currentUser } = useAuth()
   const [posts, setPosts] = useState([])
@@ -14,18 +23,12 @@ const Home = () => {
   const [filter, setFilter] = useState('All')
 
   useEffect(() => {
-    // Real-time listener — posts update instantly for all users
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'))
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setPosts(data)
       setLoading(false)
     })
-
     return unsubscribe
   }, [])
 
@@ -34,46 +37,93 @@ const Home = () => {
     : posts.filter(post => post.tag === filter)
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '32px 24px' }}>
 
-      {/* Create post — only for logged in users */}
+      {/* Header */}
+      {!currentUser ? (
+        <div style={{
+          textAlign: 'center', marginBottom: '48px', padding: '60px 24px',
+          background: 'radial-gradient(ellipse at top, #6366f115 0%, transparent 70%)',
+        }}>
+          <div style={{
+            display: 'inline-block', fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px',
+            color: '#6366f1', textTransform: 'uppercase', marginBottom: '16px',
+            padding: '4px 12px', borderRadius: '20px', border: '1px solid #6366f130',
+            backgroundColor: '#6366f110',
+          }}>
+            Developer Community
+          </div>
+          <h1 style={{
+            fontSize: '48px', fontWeight: '800', color: '#fafafa',
+            letterSpacing: '-2px', lineHeight: '1.1', marginBottom: '16px',
+          }}>
+            Where developers
+            <br />
+            <span style={{
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>
+              connect & grow
+            </span>
+          </h1>
+          <p style={{ fontSize: '16px', color: '#71717a', marginBottom: '32px' }}>
+            Share ideas, find jobs, and connect with developers worldwide.
+          </p>
+        </div>
+      ) : null}
+
       {currentUser ? <CreatePost /> : null}
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        {FILTERS.map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              filter === f
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'text-gray-500 border-gray-200 hover:border-indigo-400'
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+        {FILTERS.map(f => {
+          const color = TAG_COLORS[f] || '#6366f1'
+          const isActive = filter === f
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={{
+                fontSize: '12px', fontWeight: '600', padding: '5px 14px', borderRadius: '20px',
+                border: `1px solid ${isActive ? color : '#1f1f1f'}`,
+                backgroundColor: isActive ? color + '20' : 'transparent',
+                color: isActive ? color : '#52525b',
+                cursor: 'pointer',
+              }}
+            >
+              {f}
+            </button>
+          )
+        })}
       </div>
 
       {/* Posts */}
       {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '50%',
+            border: '3px solid #1f1f1f', borderTopColor: '#6366f1',
+            animation: 'spin 0.8s linear infinite',
+          }} />
         </div>
       ) : filteredPosts.length > 0 ? (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredPosts.map(post => (
             <PostCard key={post.id} post={post} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-4xl mb-3">📭</p>
-          <p className="text-sm">No posts yet. Be the first to post!</p>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: '#52525b' }}>
+          <p style={{ fontSize: '40px', marginBottom: '12px' }}>📭</p>
+          <p style={{ fontSize: '14px' }}>No posts yet. Be the first to post!</p>
         </div>
       )}
 
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }
