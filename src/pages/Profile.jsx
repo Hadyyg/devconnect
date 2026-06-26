@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import useUserData from '../hooks/useUserData'
+import useUserData from '../hooks/UseUserData'
 
 const Profile = () => {
   const { id } = useParams()
