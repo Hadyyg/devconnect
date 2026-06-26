@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import useUserData from '../hooks/UseUserData'
+import useUserData from '../hooks/useUserData'
 
 const Profile = () => {
   const { id } = useParams()
@@ -9,21 +9,21 @@ const Profile = () => {
   const navigate = useNavigate()
 
   const isOwnProfile = currentUser?.uid === id
-
   const goToEdit = () => navigate('/edit-profile')
   const goToChat = () => navigate('/chat')
 
   if (loading) {
     return (
-     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #1f1f1f', borderTopColor: '#6366f1', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
 
   if (!userData) {
     return (
-      <div className="text-center pt-20 text-gray-500">
+      <div style={{ textAlign: 'center', paddingTop: '80px', color: '#52525b' }}>
         User not found.
       </div>
     )
@@ -38,82 +38,114 @@ const Profile = () => {
   const userSkills = userData.skills ? userData.skills : []
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
+    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '32px 24px' }}>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div style={{
+        backgroundColor: '#111111', border: '1px solid #1f1f1f',
+        borderRadius: '20px', overflow: 'hidden',
+      }}>
 
         {/* Cover */}
-        <div className="h-24 bg-gradient-to-r from-indigo-500 to-purple-600" />
+        <div style={{
+          height: '120px',
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'radial-gradient(ellipse at 30% 50%, #6366f140, transparent)',
+          }} />
+        </div>
 
-        <div className="px-6 pb-6">
+        <div style={{ padding: '0 28px 28px' }}>
 
-          {/* Avatar + Button row */}
-          <div className="flex items-end justify-between -mt-10 mb-4">
-
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-full border-4 border-white bg-indigo-100 flex items-center justify-center overflow-hidden shadow">
+          {/* Avatar + Button */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '-40px', marginBottom: '20px' }}>
+            <div style={{
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              border: '4px solid #111111',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', boxShadow: '0 0 20px rgba(99,102,241,0.4)',
+            }}>
               {photoURL ? (
-                <img
-                  src={photoURL}
-                  alt={userName}
-                  className="w-full h-full object-cover"
-                />
+                <img src={photoURL} alt={userName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span className="text-3xl font-bold text-indigo-600">
-                  {userAvatar}
-                </span>
+                <span style={{ color: 'white', fontSize: '28px', fontWeight: '800' }}>{userAvatar}</span>
               )}
             </div>
 
-            {/* Button */}
             {isOwnProfile ? (
               <button
                 onClick={goToEdit}
-                className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                style={{
+                  padding: '8px 20px', borderRadius: '10px', border: '1px solid #2a2a2a',
+                  backgroundColor: '#1a1a1a', color: '#fafafa', fontSize: '13px',
+                  fontWeight: '600', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}
               >
                 Edit Profile
               </button>
             ) : (
               <button
                 onClick={goToChat}
-                className="border border-indigo-600 text-indigo-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                style={{
+                  padding: '8px 20px', borderRadius: '10px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: 'white', fontSize: '13px', fontWeight: '600',
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  boxShadow: '0 0 16px rgba(99,102,241,0.3)',
+                }}
               >
                 Message
               </button>
             )}
-
           </div>
 
           {/* Name */}
-          <h1 className="text-xl font-bold text-gray-900">{userName}</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#fafafa', letterSpacing: '-0.5px' }}>
+            {userName}
+          </h1>
 
           {/* Bio */}
-          <p className="text-gray-500 text-sm mt-1">{userBio}</p>
+          <p style={{ fontSize: '14px', color: '#71717a', marginTop: '6px', lineHeight: '1.6' }}>
+            {userBio}
+          </p>
 
           {/* Links */}
-          <div className="flex gap-4 mt-3">
-  {githubUrl ? (
-    <a href={githubUrl} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline">
-      GitHub
-    </a>
-  ) : null}
-  {linkedinUrl ? (
-    <a href={linkedinUrl} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline">
-      LinkedIn
-    </a>
-  ) : null}
-</div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+            {githubUrl ? (
+              <a href={githubUrl} target="_blank" rel="noreferrer" style={{
+                fontSize: '13px', fontWeight: '600', color: '#818cf8',
+                textDecoration: 'none', padding: '4px 12px', borderRadius: '20px',
+                backgroundColor: '#6366f115', border: '1px solid #6366f130',
+              }}>
+                GitHub ↗
+              </a>
+            ) : null}
+            {linkedinUrl ? (
+              <a href={linkedinUrl} target="_blank" rel="noreferrer" style={{
+                fontSize: '13px', fontWeight: '600', color: '#818cf8',
+                textDecoration: 'none', padding: '4px 12px', borderRadius: '20px',
+                backgroundColor: '#6366f115', border: '1px solid #6366f130',
+              }}>
+                LinkedIn ↗
+              </a>
+            ) : null}
+          </div>
 
           {/* Skills */}
           {userSkills.length > 0 ? (
-            <div className="mt-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {userSkills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full"
-                  >
+            <div style={{ marginTop: '24px' }}>
+              <h2 style={{ fontSize: '13px', fontWeight: '600', color: '#52525b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
+                Skills
+              </h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {userSkills.map(skill => (
+                  <span key={skill} style={{
+                    fontSize: '12px', fontWeight: '600', padding: '4px 12px', borderRadius: '20px',
+                    backgroundColor: '#6366f115', color: '#818cf8', border: '1px solid #6366f130',
+                  }}>
                     {skill}
                   </span>
                 ))}
@@ -124,13 +156,13 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Back link */}
-      <div className="mt-4">
-        <Link to="/" className="text-sm text-gray-500 hover:text-gray-900">
-          Back to Feed
+      <div style={{ marginTop: '16px' }}>
+        <Link to="/" style={{ fontSize: '13px', color: '#52525b', textDecoration: 'none' }}>
+          ← Back to Feed
         </Link>
       </div>
 
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
