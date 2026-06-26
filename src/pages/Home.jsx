@@ -6,14 +6,9 @@ import PostCard from '../components/PostCard'
 import CreatePost from '../components/CreatePost'
 
 const FILTERS = ['All', 'Question', 'Project', 'Job', 'Tutorial', 'Discussion', 'Hiring']
-
 const TAG_COLORS = {
-  Question: '#3b82f6',
-  Project: '#10b981',
-  Job: '#f59e0b',
-  Tutorial: '#8b5cf6',
-  Discussion: '#6366f1',
-  Hiring: '#ef4444',
+  Question: '#3b82f6', Project: '#10b981', Job: '#f59e0b',
+  Tutorial: '#8b5cf6', Discussion: '#5b5fc7', Hiring: '#ef4444',
 }
 
 const Home = () => {
@@ -25,107 +20,82 @@ const Home = () => {
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setPosts(data)
+      setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       setLoading(false)
     })
     return unsubscribe
   }, [])
 
-  const filteredPosts = filter === 'All'
-    ? posts
-    : posts.filter(post => post.tag === filter)
+  const filteredPosts = filter === 'All' ? posts : posts.filter(p => p.tag === filter)
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '32px 24px' }}>
-
-      {/* Header */}
-      {!currentUser ? (
-        <div style={{
-          textAlign: 'center', marginBottom: '48px', padding: '60px 24px',
-          background: 'radial-gradient(ellipse at top, #6366f115 0%, transparent 70%)',
-        }}>
-          <div style={{
-            display: 'inline-block', fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px',
-            color: '#6366f1', textTransform: 'uppercase', marginBottom: '16px',
-            padding: '4px 12px', borderRadius: '20px', border: '1px solid #6366f130',
-            backgroundColor: '#6366f110',
-          }}>
+    <div className="page-container">
+      {!currentUser && (
+        <div className="fade-up" style={{ textAlign: 'center', marginBottom: '56px', padding: '72px 24px 64px', borderRadius: '24px', background: 'radial-gradient(ellipse at 50% 0%, rgba(91,95,199,0.1) 0%, transparent 70%)', border: '1px solid #141414' }}>
+          <div className="fade-up stagger-1" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '600', letterSpacing: '1.5px', color: '#5b5fc7', textTransform: 'uppercase', marginBottom: '20px', padding: '5px 14px', borderRadius: '20px', border: '1px solid rgba(91,95,199,0.25)', background: 'rgba(91,95,199,0.08)' }}>
             Developer Community
           </div>
-          <h1 style={{
-            fontSize: '48px', fontWeight: '800', color: '#fafafa',
-            letterSpacing: '-2px', lineHeight: '1.1', marginBottom: '16px',
-          }}>
-            Where developers
-            <br />
-            <span style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>
+          <h1 className="fade-up stagger-2" style={{ fontSize: '52px', fontWeight: '800', color: '#f0f0f0', letterSpacing: '-2.5px', lineHeight: '1.08', marginBottom: '18px' }}>
+            Where developers<br />
+            <span style={{ background: 'linear-gradient(135deg, #5b5fc7, #8b5cf6, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               connect & grow
             </span>
           </h1>
-          <p style={{ fontSize: '16px', color: '#71717a', marginBottom: '32px' }}>
+          <p className="fade-up stagger-3" style={{ fontSize: '16px', color: '#555', marginBottom: '36px', lineHeight: '1.6' }}>
             Share ideas, find jobs, and connect with developers worldwide.
           </p>
+          <div className="fade-up stagger-4" style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <Link to="/register" style={{ textDecoration: 'none' }}>
+              <button className="accent-btn">Get started free</button>
+            </Link>
+            <Link to="/login" style={{ textDecoration: 'none' }}>
+              <button className="ghost-btn">Sign in</button>
+            </Link>
+          </div>
         </div>
-      ) : null}
+      )}
 
-      {currentUser ? <CreatePost /> : null}
+      {currentUser && <CreatePost />}
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '20px' }}>
         {FILTERS.map(f => {
-          const color = TAG_COLORS[f] || '#6366f1'
+          const color = TAG_COLORS[f] || '#5b5fc7'
           const isActive = filter === f
           return (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                fontSize: '12px', fontWeight: '600', padding: '5px 14px', borderRadius: '20px',
-                border: `1px solid ${isActive ? color : '#1f1f1f'}`,
-                backgroundColor: isActive ? color + '20' : 'transparent',
-                color: isActive ? color : '#52525b',
-                cursor: 'pointer',
-              }}
-            >
+            <button key={f} onClick={() => setFilter(f)} className="tag-pill" style={{
+              background: isActive ? color + '18' : 'transparent',
+              color: isActive ? color : '#444',
+              borderColor: isActive ? color + '50' : '#1a1a1a',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}>
               {f}
             </button>
           )
         })}
       </div>
 
-      {/* Posts */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
-          <div style={{
-            width: '32px', height: '32px', borderRadius: '50%',
-            border: '3px solid #1f1f1f', borderTopColor: '#6366f1',
-            animation: 'spin 0.8s linear infinite',
-          }} />
+          <div className="spinner" style={{ width: '28px', height: '28px' }} />
         </div>
       ) : filteredPosts.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredPosts.map(post => (
-            <PostCard key={post.id} post={post} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {filteredPosts.map((post, i) => (
+            <div key={post.id} className="fade-up" style={{ animationDelay: `${i * 0.05}s`, opacity: 0 }}>
+              <PostCard post={post} />
+            </div>
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: '#52525b' }}>
+        <div className="fade-in" style={{ textAlign: 'center', padding: '80px 0', color: '#333' }}>
           <p style={{ fontSize: '40px', marginBottom: '12px' }}>📭</p>
-          <p style={{ fontSize: '14px' }}>No posts yet. Be the first to post!</p>
+          <p style={{ fontSize: '14px' }}>No posts yet. Be the first!</p>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   )
 }
 
+import { Link } from 'react-router-dom'
 export default Home
