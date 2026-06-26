@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { updateProfile } from 'firebase/auth'
 import { db, storage, auth } from '../firebase/config'
 import { useAuth } from '../context/AuthContext'
-import useUserData from '../hooks/useUserData'
+import useUserData from '../hooks/UseUserData'
 
 const SKILLS_OPTIONS = [
   'JavaScript', 'React', 'Node.js', 'Python', 'TypeScript',
@@ -21,9 +21,11 @@ const EditProfile = () => {
   const [photo, setPhoto] = useState(null)
   const [preview, setPreview] = useState(null)
   const [saving, setSaving] = useState(false)
+  const initialized = useRef(false)
 
   useEffect(() => {
-    if (userData) {
+    if (userData && !initialized.current) {
+      initialized.current = true
       setFormData({
         name: userData.name || '',
         bio: userData.bio || '',
@@ -58,6 +60,7 @@ const EditProfile = () => {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    if (!userData) return
     setSaving(true)
     try {
       let photoURL = userData.photoURL || ''
@@ -97,7 +100,6 @@ const EditProfile = () => {
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '32px 24px' }}>
-
       <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#fafafa', letterSpacing: '-1px', marginBottom: '32px' }}>
         Edit Profile
       </h1>
