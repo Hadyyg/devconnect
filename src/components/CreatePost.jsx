@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db } from '../firebase/config'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase/config'
 import { useAuth } from '../context/AuthContext'
 
 const TAGS = ['Question', 'Project', 'Job', 'Tutorial', 'Discussion', 'Hiring']
@@ -13,21 +14,45 @@ const CreatePost = () => {
   const { currentUser } = useAuth()
   const [content, setContent] = useState('')
   const [tag, setTag] = useState('')
+  const [image, setImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(false)
+  const fileRef = useRef()
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImage(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const removeImage = () => {
+    setImage(null)
+    setImagePreview(null)
+    fileRef.current.value = ''
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!content.trim() || !currentUser) return
     setLoading(true)
     try {
+      let imageURL = null
+      if (image) {
+        const imgRef = ref(storage, `posts/${currentUser.uid}/${Date.now()}_${image.name}`)
+        await uploadBytes(imgRef, image)
+        imageURL = await getDownloadURL(imgRef)
+      }
       await addDoc(collection(db, 'posts'), {
         uid: currentUser.uid, name: currentUser.displayName,
         photoURL: currentUser.photoURL || '', content: content.trim(),
-        tag, likes: [], comments: [], createdAt: serverTimestamp(),
+        tag, imageURL, likes: [], comments: [], createdAt: serverTimestamp(),
       })
       setContent('')
       setTag('')
+      setImage(null)
+      setImagePreview(null)
     } catch (err) {
       console.error(err)
     } finally {
@@ -58,8 +83,42 @@ const CreatePost = () => {
             rows={3}
             style={{ width: '100%', background: 'transparent', border: 'none', fontSize: '15px', color: '#e0e0e0', resize: 'none', outline: 'none', lineHeight: '1.65', fontFamily: 'Inter, sans-serif' }}
           />
+
+          {/* Image preview */}
+          {imagePreview && (
+            <div style={{ position: 'relative', marginTop: '10px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1a1a1a' }}>
+              <img src={imagePreview} alt="preview" style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', display: 'block' }} />
+              <button
+                type="button" onClick={removeImage}
+                style={{
+                  position: 'absolute', top: '8px', right: '8px',
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.7)', border: 'none',
+                  color: 'white', fontSize: '14px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >✕</button>
+            </div>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Image upload button */}
+              <button
+                type="button"
+                onClick={() => fileRef.current.click()}
+                style={{
+                  padding: '3px 10px', borderRadius: '20px', border: '1px solid #1a1a1a',
+                  background: 'transparent', color: '#444', fontSize: '11px', fontWeight: '600',
+                  cursor: 'pointer', transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1a1a1a'; e.currentTarget.style.color = '#444' }}
+              >
+                📷 Photo
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+
               {TAGS.map(t => {
                 const color = TAG_COLORS[t]
                 const isSelected = tag === t

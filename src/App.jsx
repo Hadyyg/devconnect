@@ -14,7 +14,7 @@ import NotFound from './pages/NotFound'
 function App() {
   return (
     <BrowserRouter>
-     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+      <div style={{ minHeight: '100vh', backgroundColor: '#080808', color: '#f0f0f0' }}>
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -23,19 +23,13 @@ function App() {
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/search" element={<Search />} />
           <Route path="/edit-profile" element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
+            <ProtectedRoute><EditProfile /></ProtectedRoute>
           } />
           <Route path="/chat" element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
+            <ProtectedRoute><Chat /></ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
+            <ProtectedRoute><Notifications /></ProtectedRoute>
           } />
           <Route path="*" element={<NotFound />} />
         </Routes>

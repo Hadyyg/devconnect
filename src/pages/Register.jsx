@@ -24,6 +24,8 @@ const Register = () => {
       skills: [],
       github: '',
       linkedin: '',
+      followers: [],
+      following: [],
       createdAt: serverTimestamp(),
     }, { merge: true })
   }
